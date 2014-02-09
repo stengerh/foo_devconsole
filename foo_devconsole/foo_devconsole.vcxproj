@@ -52,7 +52,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_DEVCONSOLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASYNC_DEVCONSOLE_UI;WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_DEVCONSOLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../sdk/2011-03-11/</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -71,7 +71,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DEVCONSOLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASYNC_DEVCONSOLE_UI;WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DEVCONSOLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../sdk/2011-03-11/</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -85,15 +85,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CDevConsoleDialog.cpp" />
+    <ClCompile Include="config_devconsole.cpp" />
+    <ClCompile Include="console_entry.cpp" />
+    <ClCompile Include="console_receiver_impl.cpp" />
     <ClCompile Include="foo_devconsole.cpp" />
+    <ClCompile Include="format_timestamp.cpp" />
+    <ClCompile Include="mainmenu_devconsole.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="foo_devconsole.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CDevConsoleDialog.h" />
+    <ClInclude Include="config_devconsole.h" />
+    <ClInclude Include="console_entry.h" />
+    <ClInclude Include="console_receiver_impl.h" />
+    <ClInclude Include="format_timestamp.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="WTLWrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\sdk\2011-03-11\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">

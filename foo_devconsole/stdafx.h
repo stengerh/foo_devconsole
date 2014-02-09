@@ -23,16 +23,7 @@ extern CComModule _Module;
 #include <atlctl.h>
 #include <atlwin.h>
 
-// WTL
-#include <atlapp.h>
-//#include <atlframe.h>
-#include <atlcrack.h>
-#include <atlmisc.h>
-#include <atldlgs.h>
-#include <atlctrls.h>
-//#include <atlctrlw.h>
-//#include <atlctrlx.h>
-//#include <atlsplit.h>
+#include "WTLWrapper.h"
 
 #include "foobar2000/SDK/foobar2000.h"
 #include "foobar2000/helpers/helpers.h"
