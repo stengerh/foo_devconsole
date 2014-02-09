@@ -1,0 +1,9 @@
+/*.sdf
+/*.opensdf
+/*.suo
+/foo_devconsole/*.user
+/Release
+/Debug
+/ipch
+/foo_devconsole/Debug
+/foo_devconsole/Release
