@@ -23,8 +23,11 @@ public:
 		COMMAND_HANDLER_EX(IDC_CLEAR, BN_CLICKED, OnClickedClear)
 		COMMAND_HANDLER_EX(IDC_FREEZE, BN_CLICKED, OnClickedFreeze)
 		COMMAND_HANDLER_EX(IDC_UNFREEZE, BN_CLICKED, OnClickedUnfreeze)
+		MSG_WM_VKEYTOITEM(OnVKeyToItem)
+		MSG_WM_CHARTOITEM(OnCharToItem)
 		MSG_WM_MEASUREITEM(OnMeasureItem)
 		MSG_WM_DRAWITEM(OnDrawItem)
+		MSG_WM_CONTEXTMENU(OnContextMenu)
 		COMMAND_HANDLER_EX(IDC_MSGLIST, LBN_SELCHANGE, OnListBoxSelChange)
 		MESSAGE_HANDLER_EX(DCM_REQUEST_UPDATE, OnUpdateRequest)
 		MESSAGE_HANDLER_EX(DCM_REQUEST_CLOSE, OnCloseRequest)
@@ -52,6 +55,9 @@ private:
 
 	void DrawMsgListItem(unsigned nIndex, CDCHandle dc, const RECT & rcItem, bool bSelected, bool bExpanded);
 
+	void OnContextMenu(CWindow wnd, CPoint point);
+	int OnCharToItem(UINT nChar, UINT nIndex, CListBox listBox);
+	int OnVKeyToItem(UINT nKey, UINT nIndex, CListBox listBox);
 	void OnListBoxSelChange(UINT nCode, int nID, HWND hWnd);
 
 	LRESULT OnUpdateRequest(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -60,8 +66,10 @@ private:
 	void UpdateMsgList();
 	void UpdateTextMetric();
 
-	int GetItemHeight(int nItem, bool bExpanded);
-	void UpdateItemHeight(int nItem, bool bExpanded);
+	int GetItemHeight(unsigned nItem, bool bExpanded);
+	void UpdateItemHeight(unsigned nItem, bool bExpanded);
+
+	void CopyItemToClipboard(unsigned nItem);
 
 	WTL::CListBox m_wndMsgList;
 

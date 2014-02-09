@@ -28,13 +28,14 @@ Click the *Clear* button to remove all messages from the message list view and t
 
 Click the *Freeze* button to suspend updates to the message list view. Click the *Unfreeze* button to resume updates.
 
+Press Ctrl+C or choose *Copy* from the context menu of the message list view to copy the selected entry to the clipboard.
+
 Limitations
 -----------
 
 * The DevConsole window cannot be embedded into the main window. This is a consequence of its design.
 * Long messages will be truncated horizontally and vertically.
 * DevConsole does not support logging messages to disk.
-* DevConsole does not support copying messages to the clipboard.
 * The font of the message list view cannot be configured.
 * The message buffer is unbounded. The memory usage will grow indefinitely unless the message buffer is manually cleared.
 
