@@ -5,11 +5,13 @@
 
 #define COMPONENT_NAME    "DevConsole"
 #ifndef ASYNC_DEVCONSOLE_UI
-#define COMPONENT_VERSION "1.0.2"
+#define COMPONENT_VERSION "1.0.3"
 #else
-#define COMPONENT_VERSION "1.0.2async"
+#define COMPONENT_VERSION "1.0.3async"
 #endif
-#define COMPONENT_ABOUT   "(C) 2005 Holger Stenger"
+#define COMPONENT_ABOUT   "(C) 2005-2014 Holger Stenger\n" \
+	"\n" \
+	"http://github.com/stengerh/foo_devconsole"
 
 DECLARE_COMPONENT_VERSION(COMPONENT_NAME, COMPONENT_VERSION, COMPONENT_ABOUT)
 
