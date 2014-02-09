@@ -5,9 +5,9 @@
 
 #define COMPONENT_NAME    "DevConsole"
 #ifndef ASYNC_DEVCONSOLE_UI
-#define COMPONENT_VERSION "1.0.3"
+#define COMPONENT_VERSION "1.0.4"
 #else
-#define COMPONENT_VERSION "1.0.3async"
+#define COMPONENT_VERSION "1.0.4async"
 #endif
 #define COMPONENT_ABOUT   "(C) 2005-2014 Holger Stenger\n" \
 	"\n" \
