@@ -61,6 +61,7 @@ private:
 	void UpdateTextMetric();
 
 	int GetItemHeight(int nItem, bool bExpanded);
+	void UpdateItemHeight(int nItem, bool bExpanded);
 
 	WTL::CListBox m_wndMsgList;
 

@@ -63,7 +63,7 @@ void g_entry_added_locked()
 	HWND hWnd = g_hWnd;
 	if (hWnd != NULL)
 	{
-		::PostMessage(hWnd, WM_USER, 0, 0);
+		::PostMessage(hWnd, CDevConsoleDialog::DCM_REQUEST_UPDATE, 0, 0);
 	}
 }
 
@@ -160,8 +160,13 @@ class initquit_devconsole : public initquit
 public:
 	virtual void FB2KAPI on_init()
 	{
-		if (cfg_show_devconsole)
-			g_activate(false);
+		if (!core_api::is_quiet_mode_enabled())
+		{
+			if (cfg_show_devconsole)
+			{
+				g_activate(false);
+			}
+		}
 	}
 
 	virtual void FB2KAPI on_quit()
@@ -173,7 +178,9 @@ public:
 			hWnd = g_hWnd;
 		}
 		if (hWnd != 0)
-			::SendMessage(hWnd, WM_USER+1, 0, 0);
+		{
+			::SendMessage(hWnd, CDevConsoleDialog::DCM_REQUEST_CLOSE, 0, 0);
+		}
 #endif
 	}
 };

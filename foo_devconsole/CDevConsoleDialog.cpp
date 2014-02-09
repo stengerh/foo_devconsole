@@ -9,6 +9,10 @@ static cfg_window_placement cfg_window_placement_devconsole(guid_cfg_window_plac
 
 static bool g_frozen = false;
 
+static bool g_always_expanded = false;
+
+//#define DEBUG_SPAM
+
 dialog_resize_helper::param CDevConsoleDialog::m_resize_helper_table[] =
 {
 	{IDC_MSGLIST, dialog_resize_helper::XY_SIZE},
@@ -18,7 +22,8 @@ dialog_resize_helper::param CDevConsoleDialog::m_resize_helper_table[] =
 	{IDCANCEL,    dialog_resize_helper::XY_MOVE},
 };
 
-CDevConsoleDialog::CDevConsoleDialog() : m_resize_helper(m_resize_helper_table, tabsize(m_resize_helper_table), 235, 94, 0, 0)
+CDevConsoleDialog::CDevConsoleDialog():
+	m_resize_helper(m_resize_helper_table, tabsize(m_resize_helper_table), 235, 94, 0, 0)
 {
 	m_textmetric_valid = false;
 	m_selected_item = -1;
@@ -102,6 +107,9 @@ void CDevConsoleDialog::UpdateTextMetric()
 
 LRESULT CDevConsoleDialog::OnInitDialog(HWND hWnd, LPARAM lParam)
 {
+	HICON icon = static_api_ptr_t<ui_control>()->get_main_icon();
+	SetIcon(icon);
+
 	m_wndMsgList.Attach(GetDlgItem(IDC_MSGLIST));
 
 	m_resize_helper.process_message(m_hWnd, WM_INITDIALOG, (WPARAM)hWnd, lParam);
@@ -209,6 +217,8 @@ void CDevConsoleDialog::OnClickedUnfreeze(UINT nCode, int nId, HWND hWnd)
 
 int CDevConsoleDialog::GetItemHeight(int nItem, bool bExpanded)
 {
+	bExpanded = bExpanded || g_always_expanded;
+
 	UpdateTextMetric();
 	int cyHeader = m_textmetric.tmHeight;
 	int cyMessage = 0;
@@ -237,7 +247,7 @@ int CDevConsoleDialog::GetItemHeight(int nItem, bool bExpanded)
 		if (ptr > lastline)
 			lines++;
 #ifdef DEBUG_SPAM
-		uOutputDebugString(string_formatter() << "GetItemHeight() computed " << format_int(lines) << " lines for item " << format_int(nItem) << ".\r\n");
+		uDebugLog() << "GetItemHeight() computed " << pfc::format_int(lines) << " lines for item " << pfc::format_int(nItem));
 #endif
 		cyMessage = max(1, lines) * m_textmetric.tmHeight;
 	}
@@ -246,7 +256,9 @@ int CDevConsoleDialog::GetItemHeight(int nItem, bool bExpanded)
 		cyMessage = m_textmetric.tmHeight;
 	}
 	int cyFocusRect = min(1, GetSystemMetrics(SM_CYFOCUSBORDER));
-	return cyHeader + cyMessage + 2 * cyFocusRect;
+	int height = cyHeader + cyMessage + 2 * cyFocusRect;
+	// http://msdn.microsoft.com/en-us/library/windows/desktop/bb761348(v=vs.85).aspx
+	return min(height, 255);
 }
 
 void CDevConsoleDialog::OnMeasureItem(UINT nID, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
@@ -258,7 +270,7 @@ void CDevConsoleDialog::OnMeasureItem(UINT nID, LPMEASUREITEMSTRUCT lpMeasureIte
 	}
 
 #ifdef DEBUG_SPAM
-	uOutputDebugString(string_formatter() << "OnMeasureItem() with itemID = 0x" << format_hex(lpMeasureItemStruct->itemID, 8) << "\r\n");
+	uDebugLog() << "OnMeasureItem() with itemID = 0x" << pfc::format_hex(lpMeasureItemStruct->itemID, 8));
 #endif
 
 	if (lpMeasureItemStruct->itemID == -1)
@@ -279,6 +291,8 @@ void CDevConsoleDialog::OnMeasureItem(UINT nID, LPMEASUREITEMSTRUCT lpMeasureIte
 
 void CDevConsoleDialog::DrawMsgListItem(unsigned nIndex, CDCHandle dc, const RECT & rcItem, bool bSelected, bool bExpanded)
 {
+	bExpanded = bExpanded || g_always_expanded;
+
 	CBrushHandle brushBackground = GetSysColorBrush(COLOR_WINDOW);
 	int nBkgColorIndex = COLOR_WINDOW;
 
@@ -319,36 +333,8 @@ void CDevConsoleDialog::DrawMsgListItem(unsigned nIndex, CDCHandle dc, const REC
 
 		// header background
 		{
-#if 0
-			COLORREF colorHeaderLeft, colorHeaderRight;
-			colorHeaderLeft = GetSysColor(bSelected ? COLOR_ACTIVECAPTION : COLOR_INACTIVECAPTION);
-			colorHeaderRight = GetSysColor(bSelected ? COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION);
-
-			TRIVERTEX vert[2];
-			GRADIENT_RECT gRect;
-
-			vert[0].x     = rcHeader.left;
-			vert[0].y     = rcHeader.top;
-			vert[0].Red   = GetRValue(colorHeaderLeft) << 8;
-			vert[0].Green = GetGValue(colorHeaderLeft) << 8;
-			vert[0].Blue  = GetBValue(colorHeaderLeft) << 8;
-			vert[0].Alpha = 0x0000;
-
-			vert[1].x     = rcHeader.right;
-			vert[1].y     = rcHeader.bottom;
-			vert[1].Red   = GetRValue(colorHeaderRight) << 8;
-			vert[1].Green = GetGValue(colorHeaderRight) << 8;
-			vert[1].Blue  = GetBValue(colorHeaderRight) << 8;
-			vert[1].Alpha = 0x0000;
-
-			gRect.UpperLeft  = 0;
-			gRect.LowerRight = 1;
-
-			dc.GradientFill(vert, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
-#else
 			CBrushHandle brushHeader = GetSysColorBrush(bSelected ? COLOR_HIGHLIGHT : COLOR_MENU);
 			dc.FillRect(&rcHeader, brushHeader);
-#endif
 		}
 
 		// timestamp and thread ID
@@ -358,12 +344,7 @@ void CDevConsoleDialog::DrawMsgListItem(unsigned nIndex, CDCHandle dc, const REC
 
 			int baseline = rcHeaderText.top + m_textmetric.tmAscent;
 		
-			COLORREF colorHeaderText;
-#if 0
-			colorHeaderText = GetSysColor(bSelected ? COLOR_CAPTIONTEXT : COLOR_INACTIVECAPTIONTEXT);
-#else
-			colorHeaderText = GetSysColor(bSelected ? COLOR_HIGHLIGHTTEXT : COLOR_MENUTEXT);
-#endif
+			COLORREF colorHeaderText = GetSysColor(bSelected ? COLOR_HIGHLIGHTTEXT : COLOR_MENUTEXT);
 			dc.SetTextColor(colorHeaderText);
 			fmt.reset();
 			fmt << format_timestamp(entry.m_timestamp) << " ";
@@ -471,7 +452,7 @@ void CDevConsoleDialog::OnDrawItem(UINT nID, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	}
 
 #ifdef DEBUG_SPAM
-	uOutputDebugString(string_formatter() << "OnDrawItem() with itemID = 0x" << format_hex(lpDrawItemStruct->itemID, 8) << "\r\n");
+	uDebugLog() << "OnDrawItem() with itemID = 0x" << pfc::format_hex(lpDrawItemStruct->itemID, 8));
 #endif
 
 	CDCHandle dc = lpDrawItemStruct->hDC;
@@ -490,7 +471,7 @@ void CDevConsoleDialog::OnDrawItem(UINT nID, LPDRAWITEMSTRUCT lpDrawItemStruct)
 		case ODA_DRAWENTIRE:
 		case ODA_SELECT:
 			{
-				DrawMsgListItem(item, dc, rcItem, is_selected, is_focused);
+				DrawMsgListItem(item, dc, rcItem, is_selected, g_always_expanded || is_focused);
 
 				if ((itemState & ODS_FOCUS) != 0 && (itemState & ODS_NOFOCUSRECT) == 0)
 					dc.DrawFocusRect(&lpDrawItemStruct->rcItem);
@@ -520,12 +501,24 @@ void CDevConsoleDialog::OnListBoxSelChange(UINT nCode, int nID, HWND hWnd)
 	if (selected_item != m_selected_item)
 	{
 		if (m_selected_item != -1)
-			m_wndMsgList.SetItemHeight(m_selected_item, GetItemHeight(m_selected_item, false));
+		{
+			UpdateItemHeight(m_selected_item, false);
+		}
 		m_selected_item = selected_item;
+		if (m_selected_item != -1)
+		{
+			UpdateItemHeight(m_selected_item, true);
+		}
 	}
-	if (m_selected_item != -1)
-		m_wndMsgList.SetItemHeight(m_selected_item, GetItemHeight(m_selected_item, true));
 	m_wndMsgList.SetCurSel(selected_item);
 	m_wndMsgList.SetRedraw(TRUE);
-	m_wndMsgList.RedrawWindow(NULL, NULL, RDW_INVALIDATE);
+	m_wndMsgList.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_ERASE);
+}
+
+void CDevConsoleDialog::UpdateItemHeight(int nItem, bool bExpanded)
+{
+	UINT height = GetItemHeight(nItem, bExpanded);
+	int rv = m_wndMsgList.SetItemHeight(nItem, height);
+	if (rv == LB_ERR)
+		uDebugLog() << "Failed to set height of item " << nItem << " to " << height;
 }
