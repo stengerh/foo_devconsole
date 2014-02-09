@@ -215,7 +215,7 @@ void CDevConsoleDialog::OnClickedUnfreeze(UINT nCode, int nId, HWND hWnd)
 	UpdateMsgList();
 }
 
-int CDevConsoleDialog::GetItemHeight(int nItem, bool bExpanded)
+int CDevConsoleDialog::GetItemHeight(unsigned nItem, bool bExpanded)
 {
 	bExpanded = bExpanded || g_always_expanded;
 
@@ -494,6 +494,81 @@ void CDevConsoleDialog::OnDrawItem(UINT nID, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	dc.SetBkColor(bkColorOld);
 }
 
+void CDevConsoleDialog::OnContextMenu(CWindow wnd, CPoint point)
+{
+#ifdef DEBUG_SPAM
+	uDebugLog() << "OnContextMenu(" << wnd.GetDlgCtrlID() << ", (" << point.x << ", " << point.y << "))";
+#endif
+
+	if (m_wndMsgList == wnd)
+	{
+		SetMsgHandled(TRUE);
+		m_wndMsgList.SetFocus();
+
+		CPoint pt = point;
+		m_wndMsgList.ScreenToClient(&pt);
+		BOOL bOutside = false;
+		UINT nIndex = m_wndMsgList.ItemFromPoint(pt, bOutside);
+		bool bIndexValid = !bOutside && (nIndex < m_wndMsgList.GetCount());
+
+		if (bIndexValid)
+		{
+			m_wndMsgList.SetCurSel(nIndex);
+
+			enum {
+				CMD_COPY_ITEM = 1,
+			};
+
+			CMenu menu;
+			if (menu.CreatePopupMenu())
+			{
+				menu.AppendMenu(MF_STRING, CMD_COPY_ITEM, _T("Copy\tCtrl+C"));
+
+				const int cmd = menu.TrackPopupMenu(TPM_LEFTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, m_hWnd);
+
+				if (cmd == CMD_COPY_ITEM)
+				{
+					CopyItemToClipboard(nIndex);
+				}
+			}
+		}
+	}
+	else
+	{
+		SetMsgHandled(FALSE);
+	}
+}
+
+int CDevConsoleDialog::OnCharToItem(UINT nChar, UINT nIndex, CListBox listBox)
+{
+#ifdef DEBUG_SPAM
+	uDebugLog() << "OnCharToItem(" << nChar << ", " << nIndex << ", " << listBox.GetDlgCtrlID() << ")";
+#endif
+
+	return -1;
+}
+
+int CDevConsoleDialog::OnVKeyToItem(UINT nKey, UINT nIndex, CListBox listBox)
+{
+#ifdef DEBUG_SPAM
+	uDebugLog() << "OnVKeyToItem(" << nKey << ", " << nIndex << ", " << listBox.GetDlgCtrlID() << ")";
+#endif
+
+	switch (nKey)
+	{
+	case 'C':
+		{
+			bool bControlPressed = (GetKeyState(VK_CONTROL) & 0x1000) != 0;
+			if (bControlPressed)
+			{
+				CopyItemToClipboard(nIndex);
+				return -2;
+			}
+		}
+	}
+	return -1;
+}
+
 void CDevConsoleDialog::OnListBoxSelChange(UINT nCode, int nID, HWND hWnd)
 {
 	m_wndMsgList.SetRedraw(FALSE);
@@ -515,10 +590,67 @@ void CDevConsoleDialog::OnListBoxSelChange(UINT nCode, int nID, HWND hWnd)
 	m_wndMsgList.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_ERASE);
 }
 
-void CDevConsoleDialog::UpdateItemHeight(int nItem, bool bExpanded)
+void CDevConsoleDialog::UpdateItemHeight(unsigned nItem, bool bExpanded)
 {
 	UINT height = GetItemHeight(nItem, bExpanded);
 	int rv = m_wndMsgList.SetItemHeight(nItem, height);
 	if (rv == LB_ERR)
 		uDebugLog() << "Failed to set height of item " << nItem << " to " << height;
+}
+
+void CDevConsoleDialog::CopyItemToClipboard(unsigned nItem)
+{
+	bool valid = false;
+
+	t_filetimestamp timestamp = 0;
+	DWORD nThreadId = 0;
+	bool bMainThread = false;
+	pfc::string8 message;
+
+	{
+		insync(g_lock);
+		if (nItem < g_message_list.get_size())
+		{
+			timestamp = g_message_list[nItem].m_timestamp;
+			nThreadId = g_message_list[nItem].m_nThreadId;
+			bMainThread = g_message_list[nItem].m_bMainThread;
+			message = g_message_list[nItem].m_message;
+			valid = true;
+		}
+	}
+
+	if (valid)
+	{
+		pfc::string_formatter formatter;
+		formatter << format_timestamp(timestamp) << " thread " << pfc::format_uint(nThreadId);
+		if (bMainThread)
+		{
+			formatter << " (main thread)";
+		}
+		formatter << "\r\n";
+
+		t_size index = 0, lastline = 0;
+		int lines = 0;
+		while (message[index] != 0)
+		{
+			if (message[index] == '\r' || message[index] == '\n')
+			{
+				formatter << "> " << pfc::string_part(&message[lastline], index - lastline) << "\r\n";
+				if (message[index] == '\r' && message[index+1] == '\n')
+					index++;
+				index++;
+				lastline = index;
+			}
+			else
+			{
+				index++;
+			}
+		}
+		if (index > lastline)
+		{
+			formatter << "> " << pfc::string_part(&message[lastline], index - lastline) << "\r\n";
+		}
+
+		uSetClipboardString(formatter);
+	}
 }
